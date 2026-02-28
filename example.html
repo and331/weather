@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Синоптик - Погода у Черкасах</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Google Sans', sans-serif;
+            background-color: #121314; /* Deep Material Dark */
+            color: #E2E2E6;
+        }
+        .m3-card {
+            background-color: #1A1C1E;
+            border-radius: 28px;
+            transition: transform 0.2s ease;
+        }
+        .m3-card-active {
+            background-color: #2D2F31;
+            border: 1px solid #43474E;
+        }
+        .m3-surface {
+            background-color: #1F2022;
+        }
+        .m3-chip {
+            background-color: #333537;
+            border-radius: 12px;
+            padding: 8px 16px;
+        }
+        .m3-chip-active {
+            background-color: #D1E4FF;
+            color: #003258;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .search-bar {
+            background-color: #2D2F31;
+            border-radius: 50px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-400 p-2 rounded-xl text-black">
+                    <i data-lucide="thermometer-sun"></i>
+                </div>
+                <h1 class="text-2xl font-bold tracking-tight">sinoptik</h1>
+            </div>
+
+            <div class="flex-1 max-w-xl relative">
+                <div class="search-bar flex items-center px-5 py-3 gap-3">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400"></i>
+                    <input type="text" placeholder="Назва населеного пункту..." class="bg-transparent border-none outline-none w-full text-white placeholder-gray-500">
+                </div>
+                <div class="flex gap-4 mt-2 px-2 text-sm text-gray-400">
+                    <span class="hover:text-blue-300 cursor-pointer">Оржиця</span>
+                    <span class="hover:text-blue-300 cursor-pointer">Черкаси</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Title & Toggle -->
+        <section class="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
+            <div>
+                <h2 class="text-4xl font-medium mb-1">Погода у Черкасах</h2>
+                <p class="text-gray-400">Обласний центр Черкаської області</p>
+            </div>
+            <div class="bg-[#2D2F31] p-1 rounded-full flex">
+                <button class="px-6 py-2 rounded-full bg-blue-200 text-black font-medium text-sm">Тиждень</button>
+                <button class="px-6 py-2 rounded-full text-gray-400 font-medium text-sm hover:text-white">10 днів</button>
+            </div>
+        </section>
+
+        <!-- Weekly Strip -->
+        <section class="flex gap-3 overflow-x-auto no-scrollbar mb-8 pb-2">
+            <!-- Day Card -->
+            <div class="m3-card m3-card-active min-w-[140px] p-5 flex flex-col items-center text-center cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-blue-200">Сб 28</span>
+                <i data-lucide="cloud-sun" class="w-10 h-10 mb-3 text-yellow-200"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-3°</span>
+                    <span class="text-lg text-gray-400">+5°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Нд 29</span>
+                <i data-lucide="sun" class="w-10 h-10 mb-3 text-yellow-400"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-1°</span>
+                    <span class="text-lg text-gray-400">+7°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Пн 30</span>
+                <i data-lucide="cloud-rain" class="w-10 h-10 mb-3 text-blue-400"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">0°</span>
+                    <span class="text-lg text-gray-400">+4°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Вт 01</span>
+                <i data-lucide="cloud-snow" class="w-10 h-10 mb-3 text-white"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-4°</span>
+                    <span class="text-lg text-gray-400">+2°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Ср 02</span>
+                <i data-lucide="cloud" class="w-10 h-10 mb-3 text-gray-400"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-3°</span>
+                    <span class="text-lg text-gray-400">+5°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Чт 03</span>
+                <i data-lucide="cloud-lightning" class="w-10 h-10 mb-3 text-purple-400"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-6°</span>
+                    <span class="text-lg text-gray-400">+4°</span>
+                </div>
+            </div>
+            <div class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center hover:bg-[#252729] transition-colors cursor-pointer">
+                <span class="text-sm font-medium mb-3 text-gray-400">Пт 04</span>
+                <i data-lucide="sun" class="w-10 h-10 mb-3 text-yellow-400"></i>
+                <div class="flex gap-2">
+                    <span class="text-lg font-bold">-2°</span>
+                    <span class="text-lg text-gray-400">+8°</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Detailed Card -->
+        <section class="m3-card p-6 md:p-10 mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Left: Big Status -->
+                <div class="lg:col-span-4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#43474E] pb-8 lg:pb-0 lg:pr-8">
+                    <div class="flex items-center gap-6 mb-6">
+                        <i data-lucide="cloud-sun" class="w-24 h-24 text-yellow-200"></i>
+                        <div>
+                            <p class="text-gray-400">Субота, 28 лютого</p>
+                            <span class="text-7xl font-bold tracking-tighter">+2°C</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 text-gray-300">
+                            <i data-lucide="sunrise" class="w-5 h-5 text-orange-300"></i>
+                            <span>Схід: 06:37</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-gray-300">
+                            <i data-lucide="sunset" class="w-5 h-5 text-purple-300"></i>
+                            <span>Захід: 17:32</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Hourly Table -->
+                <div class="lg:col-span-8 overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-gray-400 text-sm border-b border-[#43474E]">
+                                <th class="py-4 font-normal min-w-[120px]">Показник</th>
+                                <th class="py-4 font-normal text-center">0:00</th>
+                                <th class="py-4 font-normal text-center">3:00</th>
+                                <th class="py-4 font-normal text-center">9:00</th>
+                                <th class="py-4 font-normal text-center bg-[#D1E4FF] bg-opacity-10 text-blue-200">12:00</th>
+                                <th class="py-4 font-normal text-center">15:00</th>
+                                <th class="py-4 font-normal text-center">18:00</th>
+                                <th class="py-4 font-normal text-center">21:00</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-[#333537]">
+                                <td class="py-4 text-gray-300">Температура, °C</td>
+                                <td class="text-center">-3°</td>
+                                <td class="text-center">+3°</td>
+                                <td class="text-center">+3°</td>
+                                <td class="text-center font-bold text-white bg-[#D1E4FF] bg-opacity-10">+2°</td>
+                                <td class="text-center">+2°</td>
+                                <td class="text-center">+2°</td>
+                                <td class="text-center">+2°</td>
+                            </tr>
+                            <tr class="border-b border-[#333537]">
+                                <td class="py-4 text-gray-300">Відчувається як</td>
+                                <td class="text-center">-3°</td>
+                                <td class="text-center">+3°</td>
+                                <td class="text-center">+3°</td>
+                                <td class="text-center bg-[#D1E4FF] bg-opacity-10">+2°</td>
+                                <td class="text-center">+2°</td>
+                                <td class="text-center">+2°</td>
+                                <td class="text-center">+2°</td>
+                            </tr>
+                            <tr class="border-b border-[#333537]">
+                                <td class="py-4 text-gray-300">Тиск, мм</td>
+                                <td class="text-center">760</td>
+                                <td class="text-center">760</td>
+                                <td class="text-center">762</td>
+                                <td class="text-center bg-[#D1E4FF] bg-opacity-10">760</td>
+                                <td class="text-center">760</td>
+                                <td class="text-center">758</td>
+                                <td class="text-center">760</td>
+                            </tr>
+                            <tr class="border-b border-[#333537]">
+                                <td class="py-4 text-gray-300">Вологість, %</td>
+                                <td class="text-center">59</td>
+                                <td class="text-center">32</td>
+                                <td class="text-center">35</td>
+                                <td class="text-center bg-[#D1E4FF] bg-opacity-10">69</td>
+                                <td class="text-center">69</td>
+                                <td class="text-center">59</td>
+                                <td class="text-center">99</td>
+                            </tr>
+                            <tr>
+                                <td class="py-4 text-gray-300">Вітер, м/с</td>
+                                <td class="text-center">↘</td>
+                                <td class="text-center">→</td>
+                                <td class="text-center">→</td>
+                                <td class="text-center bg-[#D1E4FF] bg-opacity-10">↗</td>
+                                <td class="text-center">↗</td>
+                                <td class="text-center">↗</td>
+                                <td class="text-center">↘</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Descriptions & Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <div class="space-y-6">
+                <div class="bg-[#1A1C1E] p-8 rounded-[28px]">
+                    <h3 class="text-xl font-medium mb-4 text-blue-200 flex items-center gap-2">
+                        <i data-lucide="info" class="w-5 h-5"></i> Опис погоди
+                    </h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        До самого вечора у Черкасах буде триматися похмура погода, лише під кінець дня небо очиститься від хмар. Без опадів. Вечір обіцяє бути прохолодним, але тихим.
+                    </p>
+                </div>
+
+                <div class="bg-[#1A1C1E] p-8 rounded-[28px]">
+                    <h3 class="text-xl font-medium mb-4 text-green-200 flex items-center gap-2">
+                        <i data-lucide="users" class="w-5 h-5"></i> Народний прогноз
+                    </h3>
+                    <p class="text-gray-400 leading-relaxed italic">
+                        "Якщо швидко танув сніг, то сінокіс обіцяв бути хорошим. У давнину говорили, що 28 лютого зима з весною починає боротися..." 
+                        <a href="#" class="text-blue-300 underline ml-1 font-medium">Детальніше</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-[#1A1C1E] p-8 rounded-[28px]">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-medium text-red-200 flex items-center gap-2">
+                            <i data-lucide="history" class="w-5 h-5"></i> Історія (за 130 років)
+                        </h3>
+                        <span class="text-xs text-gray-500 uppercase font-bold tracking-widest">28 лютого</span>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-[#2D2F31] rounded-2xl">
+                            <span class="text-gray-400">Максимальна:</span>
+                            <div class="text-right">
+                                <span class="text-xl font-bold text-red-400">+12°C</span>
+                                <p class="text-xs text-gray-500">1998 рік</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-[#2D2F31] rounded-2xl">
+                            <span class="text-gray-400">Мінімальна:</span>
+                            <div class="text-right">
+                                <span class="text-xl font-bold text-blue-400">-22°C</span>
+                                <p class="text-xs text-gray-500">1986 рік</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="w-full bg-[#D1E4FF] hover:bg-[#B3D1FF] text-[#003258] font-bold py-4 rounded-[28px] transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <i data-lucide="share-2" class="w-5 h-5"></i> Поділитися прогнозом
+                </button>
+            </div>
+        </div>
+
+        <footer class="mt-16 text-center text-gray-600 text-sm pb-8">
+            <p>&copy; 2026 Синоптик. Дизайн у стилі Material You. Дані оновлюються кожні 15 хвилин.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
