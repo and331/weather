@@ -9,6 +9,12 @@ extern "C" {
     fn createIcons();
 }
 
+// Функція для отримання поточної години
+#[wasm_bindgen(inline_js = "export function get_current_hour() { return new Date().getHours(); }")]
+extern "C" {
+    fn get_current_hour() -> i32;
+}
+
 #[component]
 pub fn WeatherApp() -> impl IntoView {
     let (city, set_city) = create_signal(String::new());
@@ -128,10 +134,12 @@ pub fn WeatherApp() -> impl IntoView {
                             <WeeklyStrip 
                                 selected_day=selected_day
                                 set_selected_day=set_selected_day
+                                forecast=data.forecast.clone()
                             />
                             <DetailedCard 
                                 data=data.clone()
                                 selected_day=selected_day
+                                forecast=data.forecast.clone()
                             />
                             <DescriptionsInfo city=data.name.clone()/>
                         </>
@@ -161,7 +169,7 @@ fn MainSection(
                 <h2 class="text-4xl font-medium mb-1">{format!("Погода у {}", city)}</h2>
                 <p class="text-gray-400">{region}</p>
             </div>
-            <div class="bg-[#2D2F31] p-1 rounded-full flex">
+            /*<div class="bg-[#2D2F31] p-1 rounded-full flex">
                 <button 
                     class="px-6 py-2 rounded-full font-medium text-sm transition-colors"
                     class:bg-blue-200=move || selected_day.get() == 0
@@ -182,7 +190,7 @@ fn MainSection(
                 >
                     "10 днів"
                 </button>
-            </div>
+            </div>*/
         </section>
     }
 }
@@ -191,47 +199,47 @@ fn MainSection(
 fn WeeklyStrip(
     selected_day: ReadSignal<usize>,
     set_selected_day: WriteSignal<usize>,
+    forecast: Option<Vec<crate::api::weather::DayForecast>>,
 ) -> impl IntoView {
-    let days = vec![
-        ("Сб 28", "cloud-sun", -3, 5, "text-yellow-200"),
-        ("Нд 29", "sun", -1, 7, "text-yellow-400"),
-        ("Пн 30", "cloud-rain", 0, 4, "text-blue-400"),
-        ("Вт 01", "cloud-snow", -4, 2, "text-white"),
-        ("Ср 02", "cloud", -3, 5, "text-gray-400"),
-        ("Чт 03", "cloud-lightning", -6, 4, "text-purple-400"),
-        ("Пт 04", "sun", -2, 8, "text-yellow-400"),
-    ];
-
     view! {
         <section class="flex gap-3 overflow-x-auto no-scrollbar mb-8 pb-2">
-            {days.into_iter().enumerate().map(|(idx, (date, icon, temp_min, temp_max, color))| {
-                view! {
-                    <div 
-                        class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center cursor-pointer hover:bg-[#252729] transition-colors"
-                        class:m3-card-active=move || selected_day.get() == idx
-                        on:click=move |_| {
-                            set_selected_day.set(idx);
-                            // Ініціалізуємо Lucide icons після зміни дня
-                            request_animation_frame(move || {
-                                createIcons();
-                            });
-                        }
-                    >
-                        <span 
-                            class="text-sm font-medium mb-3"
-                            class:text-blue-200=move || selected_day.get() == idx
-                            class:text-gray-400=move || selected_day.get() != idx
-                        >
-                            {date}
-                        </span>
-                        <i data-lucide={icon} class={format!("w-10 h-10 mb-3 {}", color)}></i>
-                        <div class="flex gap-2">
-                            <span class="text-lg font-bold">{format!("{:+}°", temp_min)}</span>
-                            <span class="text-lg text-gray-400">{format!("{:+}°", temp_max)}</span>
-                        </div>
-                    </div>
+            {move || {
+                if let Some(ref days) = forecast {
+                    days.iter().enumerate().map(|(idx, day)| {
+                        let day_clone = day.clone();
+                        view! {
+                            <div 
+                                class="m3-card min-w-[140px] p-5 flex flex-col items-center text-center cursor-pointer hover:bg-[#252729] transition-colors"
+                                class:m3-card-active=move || selected_day.get() == idx
+                                on:click=move |_| {
+                                    set_selected_day.set(idx);
+                                    // Ініціалізуємо Lucide icons після зміни дня
+                                    request_animation_frame(move || {
+                                        createIcons();
+                                    });
+                                }
+                            >
+                                <span 
+                                    class="text-sm font-medium mb-3"
+                                    class:text-blue-200=move || selected_day.get() == idx
+                                    class:text-gray-400=move || selected_day.get() != idx
+                                >
+                                    {day_clone.day_name.clone()}
+                                </span>
+                                <i data-lucide={day_clone.icon.clone()} class={format!("w-10 h-10 mb-3 {}", day_clone.icon_color)}></i>
+                                <div class="flex gap-2">
+                                    <span class="text-lg font-bold">{format!("{:+}°", day_clone.temp_min)}</span>
+                                    <span class="text-lg text-gray-400">{format!("{:+}°", day_clone.temp_max)}</span>
+                                </div>
+                            </div>
+                        }.into_view()
+                    }).collect::<Vec<_>>()
+                } else {
+                    vec![view! {
+                        <div class="text-gray-400">"Завантаження прогнозу..."</div>
+                    }.into_view()]
                 }
-            }).collect::<Vec<_>>()}
+            }}
         </section>
     }
 }
@@ -240,19 +248,23 @@ fn WeeklyStrip(
 fn DetailedCard(
     data: WeatherData,
     selected_day: ReadSignal<usize>,
+    forecast: Option<Vec<crate::api::weather::DayForecast>>,
 ) -> impl IntoView {
-    // Дані для кожного дня тижня
-    let days_data = vec![
-        ("Субота, 28 лютого", "cloud-sun", "text-yellow-200", vec![-3, 3, 3, 2, 2, 2, 2], vec![-3, 3, 3, 2, 2, 2, 2], vec![760, 760, 762, 760, 760, 758, 760], vec![59, 32, 35, 69, 69, 59, 99], vec!["↘", "→", "→", "↗", "↗", "↗", "↘"]),
-        ("Неділя, 29 лютого", "sun", "text-yellow-400", vec![-1, 0, 4, 7, 6, 4, 1], vec![-2, -1, 3, 7, 5, 3, 0], vec![758, 759, 761, 762, 761, 760, 759], vec![62, 45, 38, 32, 35, 48, 58], vec!["→", "↗", "↗", "↑", "↖", "←", "↙"]),
-        ("Понеділок, 01 березня", "cloud-rain", "text-blue-400", vec![0, 1, 2, 4, 3, 2, 1], vec![-1, 0, 1, 3, 2, 1, 0], vec![759, 758, 757, 756, 757, 758, 759], vec![75, 78, 82, 85, 80, 72, 68], vec!["↙", "↓", "↓", "↘", "→", "→", "↗"]),
-        ("Вівторок, 01 березня", "cloud-snow", "text-white", vec![-4, -3, -1, 2, 1, -1, -2], vec![-6, -5, -3, 0, -1, -3, -4], vec![762, 763, 764, 765, 764, 763, 762], vec![88, 85, 80, 75, 78, 82, 85], vec!["↑", "↑", "↗", "→", "↘", "↓", "↓"]),
-        ("Середа, 02 березня", "cloud", "text-gray-400", vec![-3, -2, 1, 5, 4, 2, 0], vec![-5, -4, -1, 3, 2, 0, -2], vec![761, 760, 761, 762, 761, 760, 759], vec![70, 65, 55, 48, 52, 60, 68], vec!["↙", "←", "↖", "↑", "↗", "→", "→"]),
-        ("Четвер, 03 березня", "cloud-lightning", "text-purple-400", vec![-6, -4, -2, 4, 2, 0, -3], vec![-8, -6, -4, 2, 0, -2, -5], vec![757, 756, 755, 754, 755, 757, 758], vec![92, 88, 85, 78, 82, 86, 90], vec!["↓", "↘", "→", "↗", "↑", "↖", "←"]),
-        ("П'ятниця, 04 березня", "sun", "text-yellow-400", vec![-2, 0, 3, 8, 7, 5, 2], vec![-3, -1, 2, 7, 6, 4, 1], vec![760, 761, 762, 763, 762, 761, 760], vec![55, 48, 40, 35, 38, 45, 52], vec!["←", "↖", "↑", "↗", "→", "↘", "↓"]),
-    ];
-
     let hourly_times = vec!["0:00", "3:00", "9:00", "12:00", "15:00", "18:00", "21:00"];
+
+    // Визначаємо індекс поточного часу
+    let get_current_hour_index = move || -> usize {
+        let hour = get_current_hour();
+        match hour {
+            0..=2 => 0,   // 0:00
+            3..=8 => 1,   // 3:00
+            9..=11 => 2,  // 9:00
+            12..=14 => 3, // 12:00
+            15..=17 => 4, // 15:00
+            18..=20 => 5, // 18:00
+            _ => 6,       // 21:00
+        }
+    };
 
     // Ініціалізуємо іконки після зміни дня
     create_effect(move |_| {
@@ -266,129 +278,173 @@ fn DetailedCard(
         <section class="m3-card p-6 md:p-10 mb-8">
             {move || {
                 let idx = selected_day.get();
-                let (day_name, day_icon, icon_color, hourly_temps, hourly_feels, hourly_pressure, hourly_humidity, hourly_wind) = 
-                    days_data.get(idx).cloned().unwrap_or_else(|| days_data[0].clone());
                 
-                view! {
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                        <div class="lg:col-span-4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#43474E] pb-8 lg:pb-0 lg:pr-8">
-                            <div class="flex items-center gap-6 mb-6">
-                                <i data-lucide={day_icon} class={format!("w-24 h-24 {}", icon_color)}></i>
-                                <div>
-                                    <p class="text-gray-400">{day_name}</p>
-                                    <span class="text-7xl font-bold tracking-tighter">{format!("{:.0}°C", data.main.temp)}</span>
+                if let Some(ref days) = forecast {
+                    if let Some(day) = days.get(idx) {
+                        let day_name = day.day_name.clone();
+                        let day_icon = day.icon.clone();
+                        let icon_color = day.icon_color.clone();
+                        let hourly_temps = day.hourly_temps.clone();
+                        let hourly_feels = day.hourly_feels.clone();
+                        let hourly_pressure = day.hourly_pressure.clone();
+                        let hourly_humidity = day.hourly_humidity.clone();
+                        let hourly_wind = day.hourly_wind.clone();
+                        let sunrise = day.sunrise.clone();
+                        let sunset = day.sunset.clone();
+                        
+                        view! {
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                                <div class="lg:col-span-4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#43474E] pb-8 lg:pb-0 lg:pr-8">
+                                    <div class="flex items-center gap-6 mb-6">
+                                        <i data-lucide={day_icon} class={format!("w-24 h-24 {}", icon_color)}></i>
+                                        <div>
+                                            <p class="text-gray-400">{day_name}</p>
+                                            <span class="text-7xl font-bold tracking-tighter">{format!("{:.0}°C", data.main.temp)}</span>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center gap-3 text-gray-300">
+                                            <i data-lucide="sunrise" class="w-5 h-5 text-orange-300"></i>
+                                            <span>{format!("Схід: {}", sunrise.unwrap_or_else(|| "Невідомо".to_string()))}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-gray-300">
+                                            <i data-lucide="sunset" class="w-5 h-5 text-purple-300"></i>
+                                            <span>{format!("Захід: {}", sunset.unwrap_or_else(|| "Невідомо".to_string()))}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="space-y-3">
-                                <div class="flex items-center gap-3 text-gray-300">
-                                    <i data-lucide="sunrise" class="w-5 h-5 text-orange-300"></i>
-                                    <span>"Схід: 06:37"</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-gray-300">
-                                    <i data-lucide="sunset" class="w-5 h-5 text-purple-300"></i>
-                                    <span>"Захід: 17:32"</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="lg:col-span-8 overflow-x-auto no-scrollbar">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="text-gray-400 text-sm border-b border-[#43474E]">
-                                        <th class="py-4 font-normal min-w-[120px]">"Показник"</th>
-                                        {hourly_times.iter().enumerate().map(|(idx, time)| {
-                                            view! {
-                                                <th 
-                                                    class="py-4 font-normal text-center"
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class:text-blue-200=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {*time}
-                                                </th>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                </thead>
-                                <tbody class="text-sm">
-                                    <tr class="border-b border-[#333537]">
-                                        <td class="py-4 text-gray-300">"Температура, °C"</td>
-                                        {hourly_temps.iter().enumerate().map(|(idx, temp)| {
-                                            view! {
-                                                <td 
-                                                    class="text-center"
-                                                    class:font-bold=move || idx == 3
-                                                    class:text-white=move || idx == 3
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {format!("{:+}°", temp)}
-                                                </td>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                    <tr class="border-b border-[#333537]">
-                                        <td class="py-4 text-gray-300">"Відчувається як"</td>
-                                        {hourly_feels.iter().enumerate().map(|(idx, feels)| {
-                                            view! {
-                                                <td 
-                                                    class="text-center"
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {format!("{:+}°", feels)}
-                                                </td>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                    <tr class="border-b border-[#333537]">
-                                        <td class="py-4 text-gray-300">"Тиск, мм"</td>
-                                        {hourly_pressure.iter().enumerate().map(|(idx, pressure)| {
-                                            let p = *pressure;
-                                            view! {
-                                                <td 
-                                                    class="text-center"
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {p}
-                                                </td>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                    <tr class="border-b border-[#333537]">
-                                        <td class="py-4 text-gray-300">"Вологість, %"</td>
-                                        {hourly_humidity.iter().enumerate().map(|(idx, humidity)| {
-                                            let h = *humidity;
-                                            view! {
-                                                <td 
-                                                    class="text-center"
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {h}
-                                                </td>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                    <tr>
-                                        <td class="py-4 text-gray-300">"Вітер, м/с"</td>
-                                        {hourly_wind.iter().enumerate().map(|(idx, wind)| {
-                                            view! {
-                                                <td 
-                                                    class="text-center"
-                                                    class:bg-opacity-10=move || idx == 3
-                                                    class=("bg-[#D1E4FF]", move || idx == 3)
-                                                >
-                                                    {*wind}
-                                                </td>
-                                            }
-                                        }).collect::<Vec<_>>()}
-                                    </tr>
-                                </tbody>
-                            </table>
+                                <div class="lg:col-span-8 overflow-x-auto no-scrollbar">
+                                    <table class="w-full text-left">
+                                        <thead>
+                                            <tr class="text-gray-400 text-sm border-b border-[#43474E]">
+                                                <th class="py-4 font-normal min-w-[120px]">"Показник"</th>
+                                                {hourly_times.iter().enumerate().map(|(idx, time)| {
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <th 
+                                                            class="py-4 font-normal text-center"
+                                                            class:bg-opacity-10=move || is_current
+                                                            class:text-blue-200=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {*time}
+                                                        </th>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                        </thead>
+                                        <tbody class="text-sm">
+                                            <tr class="border-b border-[#333537]">
+                                                <td class="py-4 text-gray-300">"Температура, °C"</td>
+                                                {hourly_temps.iter().enumerate().map(|(idx, temp)| {
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <td 
+                                                            class="text-center"
+                                                            class:font-bold=move || is_current
+                                                            class:text-white=move || is_current
+                                                            class:bg-opacity-10=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {format!("{:+}°", temp)}
+                                                        </td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                            <tr class="border-b border-[#333537]">
+                                                <td class="py-4 text-gray-300">"Відчувається як"</td>
+                                                {hourly_feels.iter().enumerate().map(|(idx, feels)| {
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <td 
+                                                            class="text-center"
+                                                            class:bg-opacity-10=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {format!("{:+}°", feels)}
+                                                        </td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                            <tr class="border-b border-[#333537]">
+                                                <td class="py-4 text-gray-300">"Тиск, мм"</td>
+                                                {hourly_pressure.iter().enumerate().map(|(idx, pressure)| {
+                                                    let p = *pressure;
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <td 
+                                                            class="text-center"
+                                                            class:bg-opacity-10=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {p}
+                                                        </td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                            <tr class="border-b border-[#333537]">
+                                                <td class="py-4 text-gray-300">"Вологість, %"</td>
+                                                {hourly_humidity.iter().enumerate().map(|(idx, humidity)| {
+                                                    let h = *humidity;
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <td 
+                                                            class="text-center"
+                                                            class:bg-opacity-10=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {h}
+                                                        </td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                            <tr>
+                                                <td class="py-4 text-gray-300">"Вітер, м/с"</td>
+                                                {hourly_wind.iter().enumerate().map(|(idx, wind)| {
+                                                    let w = wind.clone();
+                                                    let current_idx = get_current_hour_index();
+                                                    let is_today = selected_day.get() == 0;
+                                                    let is_current = is_today && idx == current_idx;
+                                                    view! {
+                                                        <td 
+                                                            class="text-center"
+                                                            class:bg-opacity-10=move || is_current
+                                                            class=("bg-[#D1E4FF]", move || is_current)
+                                                        >
+                                                            {w}
+                                                        </td>
+                                                    }
+                                                }).collect::<Vec<_>>()}
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }.into_view()
+                    } else {
+                        view! {
+                            <div class="text-center py-10 text-gray-400">
+                                "Дані для цього дня не знайдено"
+                            </div>
+                        }.into_view()
+                    }
+                } else {
+                    view! {
+                        <div class="text-center py-10 text-gray-400">
+                            "Завантаження деталей прогнозу..."
                         </div>
-                    </div>
+                    }.into_view()
                 }
             }}
         </section>
@@ -398,7 +454,7 @@ fn DetailedCard(
 #[component]
 fn DescriptionsInfo(city: String) -> impl IntoView {
     view! {
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        /*<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <div class="space-y-6">
                 <div class="bg-[#1A1C1E] p-8 rounded-[28px]">
                     <h3 class="text-xl font-medium mb-4 text-blue-200 flex items-center gap-2">
@@ -454,7 +510,7 @@ fn DescriptionsInfo(city: String) -> impl IntoView {
                     " Поділитися прогнозом"
                 </button>
             </div>
-        </div>
+        </div>*/
     }
 }
 
