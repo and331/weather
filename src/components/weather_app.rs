@@ -521,9 +521,9 @@ fn WelcomeScreen() -> impl IntoView {
             <div class="mb-6">
                 <i data-lucide="cloud-sun" class="w-32 h-32 text-blue-400 inline-block"></i>
             </div>
-            <h2 class="text-3xl font-bold mb-4">"Ласкаво просимо до Синоптика"</h2>
+            <h2 class="text-3xl font-bold mb-4">"Ласкаво просимо"</h2>
             <p class="text-gray-400 text-lg max-w-md">
-                "Введіть назву міста, щоб отримати детальний прогноз погоди з використанням Material You дизайну"
+                "Введіть назву міста, щоб отримати детальний прогноз погоди"
             </p>
         </div>
     }
@@ -533,7 +533,7 @@ fn WelcomeScreen() -> impl IntoView {
 fn Footer() -> impl IntoView {
     view! {
         <footer class="mt-16 text-center text-gray-600 text-sm pb-8">
-            <p>"© 2026 Синоптик. Дизайн у стилі Material You. Дані оновлюються кожні 15 хвилин."</p>
+            <p>"© 2026 weather. Дані оновлюються кожні 15 хвилин."</p>
         </footer>
     }
 }
