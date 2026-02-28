@@ -61,7 +61,7 @@ pub fn WeatherApp() -> impl IntoView {
                     <div class="bg-blue-400 p-2 rounded-xl text-black">
                         <i data-lucide="thermometer-sun"></i>
                     </div>
-                    <h1 class="text-2xl font-bold tracking-tight">"sinoptik"</h1>
+                    <h1 class="text-2xl font-bold tracking-tight">"weather"</h1>
                 </div>
 
                 <div class="flex-1 max-w-xl relative">
@@ -129,7 +129,10 @@ pub fn WeatherApp() -> impl IntoView {
                                 selected_day=selected_day
                                 set_selected_day=set_selected_day
                             />
-                            <DetailedCard data=data.clone()/>
+                            <DetailedCard 
+                                data=data.clone()
+                                selected_day=selected_day
+                            />
                             <DescriptionsInfo city=data.name.clone()/>
                         </>
                     }.into_view()
@@ -208,7 +211,10 @@ fn WeeklyStrip(
                         class:m3-card-active=move || selected_day.get() == idx
                         on:click=move |_| {
                             set_selected_day.set(idx);
-                            request_animation_frame(move || createIcons());
+                            // Ініціалізуємо Lucide icons після зміни дня
+                            request_animation_frame(move || {
+                                createIcons();
+                            });
                         }
                     >
                         <span 
@@ -231,135 +237,160 @@ fn WeeklyStrip(
 }
 
 #[component]
-fn DetailedCard(data: WeatherData) -> impl IntoView {
+fn DetailedCard(
+    data: WeatherData,
+    selected_day: ReadSignal<usize>,
+) -> impl IntoView {
+    // Дані для кожного дня тижня
+    let days_data = vec![
+        ("Субота, 28 лютого", "cloud-sun", "text-yellow-200", vec![-3, 3, 3, 2, 2, 2, 2], vec![-3, 3, 3, 2, 2, 2, 2], vec![760, 760, 762, 760, 760, 758, 760], vec![59, 32, 35, 69, 69, 59, 99], vec!["↘", "→", "→", "↗", "↗", "↗", "↘"]),
+        ("Неділя, 29 лютого", "sun", "text-yellow-400", vec![-1, 0, 4, 7, 6, 4, 1], vec![-2, -1, 3, 7, 5, 3, 0], vec![758, 759, 761, 762, 761, 760, 759], vec![62, 45, 38, 32, 35, 48, 58], vec!["→", "↗", "↗", "↑", "↖", "←", "↙"]),
+        ("Понеділок, 01 березня", "cloud-rain", "text-blue-400", vec![0, 1, 2, 4, 3, 2, 1], vec![-1, 0, 1, 3, 2, 1, 0], vec![759, 758, 757, 756, 757, 758, 759], vec![75, 78, 82, 85, 80, 72, 68], vec!["↙", "↓", "↓", "↘", "→", "→", "↗"]),
+        ("Вівторок, 01 березня", "cloud-snow", "text-white", vec![-4, -3, -1, 2, 1, -1, -2], vec![-6, -5, -3, 0, -1, -3, -4], vec![762, 763, 764, 765, 764, 763, 762], vec![88, 85, 80, 75, 78, 82, 85], vec!["↑", "↑", "↗", "→", "↘", "↓", "↓"]),
+        ("Середа, 02 березня", "cloud", "text-gray-400", vec![-3, -2, 1, 5, 4, 2, 0], vec![-5, -4, -1, 3, 2, 0, -2], vec![761, 760, 761, 762, 761, 760, 759], vec![70, 65, 55, 48, 52, 60, 68], vec!["↙", "←", "↖", "↑", "↗", "→", "→"]),
+        ("Четвер, 03 березня", "cloud-lightning", "text-purple-400", vec![-6, -4, -2, 4, 2, 0, -3], vec![-8, -6, -4, 2, 0, -2, -5], vec![757, 756, 755, 754, 755, 757, 758], vec![92, 88, 85, 78, 82, 86, 90], vec!["↓", "↘", "→", "↗", "↑", "↖", "←"]),
+        ("П'ятниця, 04 березня", "sun", "text-yellow-400", vec![-2, 0, 3, 8, 7, 5, 2], vec![-3, -1, 2, 7, 6, 4, 1], vec![760, 761, 762, 763, 762, 761, 760], vec![55, 48, 40, 35, 38, 45, 52], vec!["←", "↖", "↑", "↗", "→", "↘", "↓"]),
+    ];
+
     let hourly_times = vec!["0:00", "3:00", "9:00", "12:00", "15:00", "18:00", "21:00"];
-    let hourly_temps = vec![-3, 3, 3, 2, 2, 2, 2];
-    let hourly_feels = vec![-3, 3, 3, 2, 2, 2, 2];
-    let hourly_pressure = vec![760, 760, 762, 760, 760, 758, 760];
-    let hourly_humidity = vec![59, 32, 35, 69, 69, 59, 99];
-    let hourly_wind = vec!["↘", "→", "→", "↗", "↗", "↗", "↘"];
+
+    // Ініціалізуємо іконки після зміни дня
+    create_effect(move |_| {
+        selected_day.get(); // Відстежуємо зміни
+        request_animation_frame(move || {
+            createIcons();
+        });
+    });
 
     view! {
         <section class="m3-card p-6 md:p-10 mb-8">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div class="lg:col-span-4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#43474E] pb-8 lg:pb-0 lg:pr-8">
-                    <div class="flex items-center gap-6 mb-6">
-                        <i data-lucide="cloud-sun" class="w-24 h-24 text-yellow-200"></i>
-                        <div>
-                            <p class="text-gray-400">"Субота, 28 лютого"</p>
-                            <span class="text-7xl font-bold tracking-tighter">{format!("{:.0}°C", data.main.temp)}</span>
+            {move || {
+                let idx = selected_day.get();
+                let (day_name, day_icon, icon_color, hourly_temps, hourly_feels, hourly_pressure, hourly_humidity, hourly_wind) = 
+                    days_data.get(idx).cloned().unwrap_or_else(|| days_data[0].clone());
+                
+                view! {
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                        <div class="lg:col-span-4 flex flex-col justify-center border-b lg:border-b-0 lg:border-r border-[#43474E] pb-8 lg:pb-0 lg:pr-8">
+                            <div class="flex items-center gap-6 mb-6">
+                                <i data-lucide={day_icon} class={format!("w-24 h-24 {}", icon_color)}></i>
+                                <div>
+                                    <p class="text-gray-400">{day_name}</p>
+                                    <span class="text-7xl font-bold tracking-tighter">{format!("{:.0}°C", data.main.temp)}</span>
+                                </div>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3 text-gray-300">
+                                    <i data-lucide="sunrise" class="w-5 h-5 text-orange-300"></i>
+                                    <span>"Схід: 06:37"</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-gray-300">
+                                    <i data-lucide="sunset" class="w-5 h-5 text-purple-300"></i>
+                                    <span>"Захід: 17:32"</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3 text-gray-300">
-                            <i data-lucide="sunrise" class="w-5 h-5 text-orange-300"></i>
-                            <span>"Схід: 06:37"</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-gray-300">
-                            <i data-lucide="sunset" class="w-5 h-5 text-purple-300"></i>
-                            <span>"Захід: 17:32"</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="lg:col-span-8 overflow-x-auto no-scrollbar">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-gray-400 text-sm border-b border-[#43474E]">
-                                <th class="py-4 font-normal min-w-[120px]">"Показник"</th>
-                                {hourly_times.iter().enumerate().map(|(idx, time)| {
-                                    view! {
-                                        <th 
-                                            class="py-4 font-normal text-center"
-                                            class:bg-opacity-10=move || idx == 3
-                                            class:text-blue-200=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {*time}
-                                        </th>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                        </thead>
-                        <tbody class="text-sm">
-                            <tr class="border-b border-[#333537]">
-                                <td class="py-4 text-gray-300">"Температура, °C"</td>
-                                {hourly_temps.iter().enumerate().map(|(idx, temp)| {
-                                    view! {
-                                        <td 
-                                            class="text-center"
-                                            class:font-bold=move || idx == 3
-                                            class:text-white=move || idx == 3
-                                            class:bg-opacity-10=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {format!("{:+}°", temp)}
-                                        </td>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                            <tr class="border-b border-[#333537]">
-                                <td class="py-4 text-gray-300">"Відчувається як"</td>
-                                {hourly_feels.iter().enumerate().map(|(idx, feels)| {
-                                    view! {
-                                        <td 
-                                            class="text-center"
-                                            class:bg-opacity-10=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {format!("{:+}°", feels)}
-                                        </td>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                            <tr class="border-b border-[#333537]">
-                                <td class="py-4 text-gray-300">"Тиск, мм"</td>
-                                {hourly_pressure.iter().enumerate().map(|(idx, pressure)| {
-                                    let p = *pressure;
-                                    view! {
-                                        <td 
-                                            class="text-center"
-                                            class:bg-opacity-10=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {p}
-                                        </td>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                            <tr class="border-b border-[#333537]">
-                                <td class="py-4 text-gray-300">"Вологість, %"</td>
-                                {hourly_humidity.iter().enumerate().map(|(idx, humidity)| {
-                                    let h = *humidity;
-                                    view! {
-                                        <td 
-                                            class="text-center"
-                                            class:bg-opacity-10=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {h}
-                                        </td>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                            <tr>
-                                <td class="py-4 text-gray-300">"Вітер, м/с"</td>
-                                {hourly_wind.iter().enumerate().map(|(idx, wind)| {
-                                    view! {
-                                        <td 
-                                            class="text-center"
-                                            class:bg-opacity-10=move || idx == 3
-                                            class=("bg-[#D1E4FF]", move || idx == 3)
-                                        >
-                                            {*wind}
-                                        </td>
-                                    }
-                                }).collect::<Vec<_>>()}
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                        <div class="lg:col-span-8 overflow-x-auto no-scrollbar">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="text-gray-400 text-sm border-b border-[#43474E]">
+                                        <th class="py-4 font-normal min-w-[120px]">"Показник"</th>
+                                        {hourly_times.iter().enumerate().map(|(idx, time)| {
+                                            view! {
+                                                <th 
+                                                    class="py-4 font-normal text-center"
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class:text-blue-200=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {*time}
+                                                </th>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm">
+                                    <tr class="border-b border-[#333537]">
+                                        <td class="py-4 text-gray-300">"Температура, °C"</td>
+                                        {hourly_temps.iter().enumerate().map(|(idx, temp)| {
+                                            view! {
+                                                <td 
+                                                    class="text-center"
+                                                    class:font-bold=move || idx == 3
+                                                    class:text-white=move || idx == 3
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {format!("{:+}°", temp)}
+                                                </td>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                    <tr class="border-b border-[#333537]">
+                                        <td class="py-4 text-gray-300">"Відчувається як"</td>
+                                        {hourly_feels.iter().enumerate().map(|(idx, feels)| {
+                                            view! {
+                                                <td 
+                                                    class="text-center"
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {format!("{:+}°", feels)}
+                                                </td>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                    <tr class="border-b border-[#333537]">
+                                        <td class="py-4 text-gray-300">"Тиск, мм"</td>
+                                        {hourly_pressure.iter().enumerate().map(|(idx, pressure)| {
+                                            let p = *pressure;
+                                            view! {
+                                                <td 
+                                                    class="text-center"
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {p}
+                                                </td>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                    <tr class="border-b border-[#333537]">
+                                        <td class="py-4 text-gray-300">"Вологість, %"</td>
+                                        {hourly_humidity.iter().enumerate().map(|(idx, humidity)| {
+                                            let h = *humidity;
+                                            view! {
+                                                <td 
+                                                    class="text-center"
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {h}
+                                                </td>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                    <tr>
+                                        <td class="py-4 text-gray-300">"Вітер, м/с"</td>
+                                        {hourly_wind.iter().enumerate().map(|(idx, wind)| {
+                                            view! {
+                                                <td 
+                                                    class="text-center"
+                                                    class:bg-opacity-10=move || idx == 3
+                                                    class=("bg-[#D1E4FF]", move || idx == 3)
+                                                >
+                                                    {*wind}
+                                                </td>
+                                            }
+                                        }).collect::<Vec<_>>()}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            }}
         </section>
     }
 }
